@@ -1113,7 +1113,14 @@ async function main() {
       assert(heap && heap.samples > 20, `the heap sampler barely ran (${heap?.samples ?? 0} samples)`);
 
       const growthMB = (heap.peak - baseline) / (1024 * 1024);
-      const budgetMB = sizeMB / 2; // a whole-file buffer would be ≥ 64 MB; half is a safe line
+      // The budget separates streaming from whole-file buffering, so it has to sit well below
+      // the file size: an implementation that buffers this 64 MB file retains ≥ 64 MB (in
+      // practice more, because chunks and copies overlap), while a streaming sender shows only
+      // transient garbage. Measured growth across runs: 13–33 MB — that spread is V8's own GC
+      // cadence, which is slower on a shared CI runner, and one run at 32.8 MB tripped a 32 MB
+      // budget. 75% of the file size keeps a wide margin over the noise and still fails
+      // unambiguously if the whole file is ever held in memory.
+      const budgetMB = Math.round(sizeMB * 0.75);
       console.log(
         `     heap: baseline ${(baseline / 1048576).toFixed(1)} MB → peak ${(heap.peak / 1048576).toFixed(1)} MB ` +
           `(+${growthMB.toFixed(1)} MB while sending ${sizeMB} MB in ${heap.samples} samples; settled ${(heap.settled / 1048576).toFixed(1)} MB)`,
@@ -1492,11 +1499,23 @@ async function main() {
       await waitForValue(
         async () => {
           const snapshot = await b.snapshot();
-          return snapshot.links.some((link) => link.ctl === 'open' && link.bin === 'open');
+          // The announcement travels on `ctl`; requiring `bin` as well would fail a link that
+          // is perfectly able to carry it.
+          return snapshot.links.some((link) => link.ctl === 'open');
         },
-        'device B to have a usable data channel before the rename',
-        30000,
-      );
+        'device B to have an open control channel before the rename',
+        45000,
+      ).catch(async (error) => {
+        const [snapshotB, snapshotA] = await Promise.all([b.snapshot(), a.snapshot()]);
+        const describe = (snapshot) =>
+          snapshot.links
+            .map((link) => `${link.identity?.name ?? 'null'}/ctl=${link.ctl}/bin=${link.bin}/status=${link.status}`)
+            .join(', ') || 'no links';
+        throw new Error(
+          `${error.message}\n        why? page B links: [${describe(snapshotB)}]\n` +
+            `              page A links: [${describe(snapshotA)}]`,
+        );
+      });
       await a.clickAriaButton('Settings');
       await a.waitForDialog('Settings');
       const typed = await pageA.evaluate(() => {

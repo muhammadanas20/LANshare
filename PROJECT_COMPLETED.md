@@ -480,6 +480,18 @@ These were real defects caught by the test suites — not theoretical:
     workflow comment and the README now state the one manual step instead of implying the first
     push is enough.
 
+36. **Two thresholds in my own checks were guesses, and CI found both.** The streaming check
+    allowed the sender's heap to grow by half the file size (32 MB of a 64 MB file) and one run
+    measured 32.8 MB — while a sender that buffered the file would show at least 64 MB, so the
+    line sat far too close to ordinary noise. Growth across runs is 8–33 MB, entirely dependent
+    on how eagerly V8 collects; the budget is now 75% of the file size, which still fails
+    unambiguously if the whole file is ever held. The same run also timed out a precondition I had
+    written minutes earlier that demanded *both* data channels be open before the rename — the
+    announcement only uses `ctl`, and requiring `bin` failed a link that could perfectly well
+    carry it; it now waits on `ctl` with a longer window and prints both sides' link state when it
+    gives up. Both are harness calibrations, not app defects, and both are recorded with the
+    numbers so the next person can tell whether a failure is real.
+
 Test-harness (not app) issues fixed along the way: a channel that never opens inside the
 serverless suite now reports both sides' link state (ICE gathering/connection state, channel
 readiness) instead of a bare timeout, because "which state machine stuck" is the whole
