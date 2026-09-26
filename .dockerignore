@@ -1,0 +1,21 @@
+# Everything the signaling-server image does not need.
+node_modules
+server/node_modules
+server/dist
+dist
+coverage
+.git
+.github
+.env
+.env.*
+*.log
+*.tsbuildinfo
+scripts
+src
+public
+index.html
+vite.config.ts
+tailwind.config.js
+postcss.config.js
+vitest.setup.ts
+server/src/**/*.test.ts

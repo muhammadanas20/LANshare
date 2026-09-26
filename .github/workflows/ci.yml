@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend — typecheck, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm run test
+      - name: Build
+        run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lanshare-dist
+          path: dist
+          retention-days: 7
+
+  signaling:
+    name: Signaling server — typecheck, tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests
+        run: npm run test
+      # `docker` cannot build here, but every Dockerfile instruction can be replayed: the
+      # script runs both stages, starts the runtime exactly as CMD does, exercises the
+      # image's own HEALTHCHECK command and completes a real signaling handshake.
+      - name: Dockerfile dry-run (no docker required)
+        run: npm run verify:docker
+        working-directory: .
+
+  end-to-end:
+    name: End-to-end (two browsers, real WebRTC)
+    runs-on: ubuntu-latest
+    needs: [frontend, signaling]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install signaling server deps
+        run: npm ci
+        working-directory: server
+      - name: Build frontend
+        run: npm run build
+      # Both E2E scripts launch the compiled signaling server (server/dist/index.js).
+      - name: Build signaling server
+        run: npm run build
+        working-directory: server
+      # The E2E suite drives two isolated browser contexts through the real UI.
+      - name: Install puppeteer
+        run: npm install --no-save puppeteer
+      - name: Run end-to-end suite
+        run: npm run e2e
+        env:
+          E2E_SIGNALING_PORT: '8099'
+          E2E_PREVIEW_PORT: '4183'
+      # Which side dials depends on peer ids, so the reconnect check above only lands on
+      # the hardest ordering by chance. This companion script redraws sessions until the
+      # surviving device owns a dialer link whose data channels are dead, and requires the
+      # app to rebuild it on its own.
+      - name: Reconnect regression (reload mid-session)
+        run: npm run e2e:reconnect
+        env:
+          E2E_SIGNALING_PORT: '8097'
+          E2E_PREVIEW_PORT: '4185'
+      # The suites above run the app from `/` with signaling proxied through the same
+      # origin. A real deployment is served from a sub-path and talks to a signaling
+      # server on another origin with an ALLOWED_ORIGINS allow-list, so this step builds
+      # and drives that shape.
+      - name: Deployment shape (Pages sub-path + cross-origin signaling)
+        run: npm run e2e:pages
+        env:
+          PAGES_SIGNALING_PORT: '8092'
+          PAGES_HTTP_PORT: '4199'
+      # Offline LAN mode: one process serves the built frontend *and* signaling, with no
+      # external ICE servers, and two browser contexts transfer a file over a non-loopback
+      # address. Fails if either browser contacts anything outside that address.
+      - name: Offline LAN (no internet, single host)
+        run: npm run e2e:offline
+        env:
+          OFFLINE_E2E_HTTP_PORT: '8094'
+          OFFLINE_E2E_HTTPS_PORT: '8095'
+      # Serverless pairing: the app is served as plain static files with no `/ws` route at
+      # all, and two devices still pair through a text code and transfer a file.
+      - name: Serverless pairing (no signaling server at all)
+        run: npm run e2e:serverless
+        env:
+          SERVERLESS_HTTP_PORT: '4197'
+      # The whole app as one self-contained HTML file, opened straight from disk: the path for
+      # a phone with no server and no install.
+      - name: Single-file app (opened from file://)
+        run: npm run e2e:single-file
+      # The "give this to somebody" archive: extracted and run as a user would run it.
+      - name: Offline bundle (build, extract, run)
+        run: npm run bundle:offline && npm run verify:bundle
+      - name: Upload failure screenshots and page state
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts
+          path: /tmp/lanshare-e2e-*
+          if-no-files-found: ignore
+          retention-days: 7

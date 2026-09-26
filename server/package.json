@@ -1,0 +1,32 @@
+{
+  "name": "lanshare-signaling",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "LANShare WebSocket signaling server — peer discovery and WebRTC negotiation only. Never stores file data.",
+  "license": "MIT",
+  "author": "Muhammad Anas",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

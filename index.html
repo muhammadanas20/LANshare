@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>LANShare — fast peer-to-peer file sharing between nearby devices</title>
+    <meta
+      name="description"
+      content="LANShare — fast peer-to-peer file sharing between nearby devices. Share files, photos, videos and text directly between devices on the same network. No account required. Built by Muhammad Anas."
+    />
+    <meta name="author" content="Muhammad Anas" />
+    <meta name="application-name" content="LANShare" />
+    <meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0e14" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="robots" content="index, follow" />
+    <!-- Add a canonical URL here after deployment, e.g. https://user.github.io/lan-share/ -->
+
+    <!-- Icons -->
+    <link rel="icon" href="./favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="LANShare" />
+    <meta property="og:title" content="LANShare — share anything. Nearby. Instantly." />
+    <meta
+      property="og:description"
+      content="Open on two devices on the same network, pick a device and send files or text directly. Peer-to-peer over an encrypted WebRTC data channel. No account required."
+    />
+    <meta property="og:image" content="./icons/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="LANShare — fast nearby file sharing" />
+    <meta
+      name="twitter:description"
+      content="Peer-to-peer file and text sharing between nearby devices in the browser. Built by Muhammad Anas."
+    />
+    <meta name="twitter:image" content="./icons/og-image.png" />
+
+    <style>
+      /* First-paint shell: uses only flat declarations (no nested @media on :root) so the
+         build pipeline and every browser parse it identically. */
+      html,
+      body {
+        margin: 0;
+        background: #f6f7fb;
+        color: #0e1626;
+        font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        color-scheme: light dark;
+      }
+      #root:empty::after {
+        content: 'LANShare — preparing your session…';
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        opacity: 0.7;
+      }
+    </style>
+
+      /* Minimal first-paint styling so the shell never flashes unstyled content. */
+      :root {
+        color-scheme: light dark;
+        --boot-bg: #f6f7fb;
+        --boot-text: #0e1626;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --boot-bg: #0a0e14;
+          --boot-text: #e9eef6;
+        }
+      }
+      html,
+      body {
+        margin: 0;
+        background: var(--boot-bg);
+        color: var(--boot-text);
+        font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      #root:empty::after {
+        content: 'LANShare — preparing your session…';
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="max-width: 34rem; margin: 4rem auto; padding: 1.5rem; line-height: 1.6">
+        <h1 style="font-size: 1.25rem">LANShare needs JavaScript</h1>
+        <p>
+          LANShare moves files directly between your devices using WebRTC, which requires JavaScript and a modern
+          browser (Chrome, Firefox, Edge or Safari).
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
