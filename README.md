@@ -1,5 +1,9 @@
 # LANShare
 
+[![CI](https://github.com/muhammadanas20/LANshare/actions/workflows/ci.yml/badge.svg)](https://github.com/muhammadanas20/LANshare/actions/workflows/ci.yml)
+[![Deploy frontend to GitHub Pages](https://github.com/muhammadanas20/LANshare/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/muhammadanas20/LANshare/actions/workflows/deploy-pages.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Share anything. Nearby. Instantly.**
 
 LANShare sends files, photos, videos, folders and text straight between devices on the
@@ -8,6 +12,10 @@ over an encrypted WebRTC DataChannel; a small WebSocket server only helps the tw
 devices find each other and agree on the connection.
 
 > Built by **Muhammad Anas**.
+>
+> The frontend runs at **<https://muhammadanas20.github.io/LANshare/>** (GitHub Pages serves
+> static files only; point `VITE_SIGNALING_URL` at your own signaling server to make it
+> functional, or use one of the offline modes below).
 
 ---
 

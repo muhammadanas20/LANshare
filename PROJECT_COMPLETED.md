@@ -103,6 +103,13 @@ a real `vite preview` build and asserts on observable behaviour:
     very read that used to crash the app. This is the check that would have caught bug 23, and
     reverting the fix fails it (30/31) while everything else stays green.
 
+All seven suites run in CI on Linux on every push, alongside the unit tests and the Dockerfile
+dry-run; the end-to-end job performs the same seven shapes the local batteries do, including the
+offline bundle being built, extracted and driven in a browser. Continuous integration is
+therefore part of the verification, not a separate story: the first fully green run (commit
+`2edf23d`) is the point at which every claim in this document had been reproduced somewhere other
+than this machine.
+
 Seven focused suites sit alongside the main one, each covering a shape the main suite does
 not: `npm run e2e:reconnect` (a forced mid-session reload), `npm run e2e:pages` (sub-path
 build + cross-origin signaling + origin allow-list), `npm run e2e:offline` (the whole product
