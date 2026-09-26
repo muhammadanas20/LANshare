@@ -10,6 +10,10 @@ server/dist/
 
 # downloaded browser binaries for the end-to-end suites (never source)
 .config/
+.cache/
+
+# npm's own cache, created under $HOME when installs run inside this directory
+.npm/
 
 # scratch left behind by `sudo` inside containers
 .sudo_as_admin_successful

@@ -434,6 +434,24 @@ These were real defects caught by the test suites — not theoretical:
     now waits for the transport itself. Both are recorded because a check that fails for a
     harness reason is indistinguishable from a real defect until it is diagnosed.
 
+32. **The server suite only passed because of a mistake in my own checkout.** Running
+    `vitest` inside `server/` made Vite walk up the tree, find the repository-root
+    `postcss.config.js` and try to load `tailwindcss` — a *frontend* dependency. Locally that
+    resolved, because a full-repository install had already populated the root `node_modules`;
+    the CI signaling job deliberately installs only `server/`, so the suite died with
+    *Cannot find module 'tailwindcss'* before running a single test. `server/vitest.config.ts`
+    now pins the root to the server package and hands Vite an inline, empty PostCSS config, so
+    the suite is self-contained. Reproduced and then fixed in a fresh `git clone` of the pushed
+    repository with no root `node_modules` present — 47/47 there, which is the only environment
+    that could prove it.
+33. **The Pages workflow could not switch Pages on by itself.** `actions/configure-pages@v5`
+    fails on a repository where Pages has never been enabled, which is exactly the state of a
+    brand-new repo on its first push, so the first deployment went red for a reason unrelated to
+    the code. It now passes `enablement: true` (using the `pages: write` permission the workflow
+    already declared), so the first run enables Pages and deploys. Discovered by reading the
+    failing run's jobs through the GitHub API — the failures of a workflow are as much a part of
+    "verified" as the passes.
+
 Test-harness (not app) issues fixed along the way: a channel that never opens inside the
 serverless suite now reports both sides' link state (ICE gathering/connection state, channel
 readiness) instead of a bare timeout, because "which state machine stuck" is the whole
