@@ -1483,6 +1483,20 @@ async function main() {
 
     await check('renaming this device is announced to the other device', async () => {
       const newName = 'Renamed Otter';
+      // A rename travels to the other device over the live data channel, so first require that
+      // channel to exist: the preceding checks include a 64 MB transfer, a cancellation and a
+      // declined transfer, and the transport can still be recovering from one of them. A rename
+      // cannot be confirmed over a channel that is not there yet — and when such a link is
+      // rebuilt, the app re-announces whose current name on channel open, so waiting here costs
+      // nothing and removes a flake that had nothing to do with renaming.
+      await waitForValue(
+        async () => {
+          const snapshot = await b.snapshot();
+          return snapshot.links.some((link) => link.ctl === 'open' && link.bin === 'open');
+        },
+        'device B to have a usable data channel before the rename',
+        30000,
+      );
       await a.clickAriaButton('Settings');
       await a.waitForDialog('Settings');
       const typed = await pageA.evaluate(() => {
@@ -1510,14 +1524,29 @@ async function main() {
       });
       // The name must reach the other device over *both* channels: the signalling
       // PEER_UPDATED broadcast (the device list) and the in-band HELLO re-announcement on
-      // the live data channel (the link identity).
-      const announced = await b.snapshot();
-      assert(
-        announced.links.some((link) => link.identity === newName),
-        `the new name never arrived over the data channel (link identity is ${JSON.stringify(
-          announced.links.map((link) => link.identity),
-        )})`,
-      );
+      // the live data channel (the link identity). The two travel independently, and the
+      // wait above only covers the list — so asserting the identity straight after it read
+      // the data channel mid-flight and reported a null identity on a slower machine. That
+      // is a race in the check, not in the app: wait for the transport fact on its own.
+      const announced = await waitForValue(
+        async () => {
+          const snapshot = await b.snapshot();
+          return snapshot.links.some((link) => link.identity === newName) ? snapshot : null;
+        },
+        `device B to receive the renamed device over the data channel (identity “${newName}”)`,
+      ).catch(async (error) => {
+        // Report *both* sides' transport state, not just the missing name: whether the link is
+        // open but never received the HELLO, or open on one side only, changes what is wrong.
+        const [snapshotB, snapshotA] = await Promise.all([b.snapshot(), a.snapshot()]);
+        const describe = (snapshot) =>
+          snapshot.links
+            .map((link) => `${link.identity?.name ?? 'null'}/ctl=${link.ctl}/bin=${link.bin}/status=${link.status}`)
+            .join(', ');
+        throw new Error(
+          `${error.message}\n        why? page B links: [${describe(snapshotB)}]\n` +
+            `              page A links: [${describe(snapshotA)}]`,
+        );
+      });
       assert(
         announced.peers.some((peer) => peer.name === newName),
         `the device list on the other side still shows ${JSON.stringify(announced.peers.map((peer) => peer.name))}`,

@@ -452,6 +452,27 @@ These were real defects caught by the test suites — not theoretical:
     failing run's jobs through the GitHub API — the failures of a workflow are as much a part of
     "verified" as the passes.
 
+34. **A rename could not be confirmed because the channel was not there yet** (the check was
+    wrong twice over). The rename test read the peer's data-channel identity the instant the
+    *device list* showed the new name — two different paths, one over the signalling server, one
+    in band — so on a slower machine it reported a null identity while the app was behaving
+    correctly. Waiting properly then exposed the second half: the checks that run just before it
+    (a 64 MB transfer, a cancellation, a declined transfer) can leave the transport rebuilding,
+    and a rename genuinely cannot be confirmed over a channel that does not exist yet. The check
+    now requires a usable channel first (the app re-announces your current name whenever a
+    channel opens, so this heals by itself) and then waits for the identity, and on failure it
+    prints **both** sides' link state — which is what showed the pattern: a stale `unstable` link
+    with a closed channel beside the live one. Reverting the fix and removing the rename
+    announcement from the app fails exactly this check (`30/31`, with the expected message), so
+    the check still has teeth.
+35. **A brand-new repository cannot let its own workflow enable Pages.** `actions/configure-pages`
+    asks GitHub to create the Pages site (`enablement: true`), and that call is refused with
+    *Resource not accessible by integration* on a repository where Pages has never been enabled,
+    because creating the site needs an account-level permission a workflow token does not carry.
+    Pages was therefore enabled once through the API (build type: workflow), and both the
+    workflow comment and the README now state the one manual step instead of implying the first
+    push is enough.
+
 Test-harness (not app) issues fixed along the way: a channel that never opens inside the
 serverless suite now reports both sides' link state (ICE gathering/connection state, channel
 readiness) instead of a bare timeout, because "which state machine stuck" is the whole

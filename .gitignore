@@ -15,6 +15,9 @@ server/dist/
 # npm's own cache, created under $HOME when installs run inside this directory
 .npm/
 
+# tooling scratch under $HOME (pip/uv, editor state)
+.local/
+
 # scratch left behind by `sudo` inside containers
 .sudo_as_admin_successful
 

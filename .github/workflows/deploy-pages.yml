@@ -32,11 +32,13 @@ jobs:
           VITE_BASE_PATH: ${{ format('/{0}/', github.event.repository.name) }}
           VITE_SIGNALING_URL: ${{ vars.VITE_SIGNALING_URL }}
         run: npm run build
-      # `enablement: true` lets the first run turn Pages on by itself (it needs the
-      # `pages: write` permission declared above). Without it the action fails on a
-      # repository where Pages has never been enabled, which is exactly what happened on the
-      # first push. Pages serves static files only — the signaling server is a separate Node
-      # process, pointed at through VITE_SIGNALING_URL.
+      # Pages has to be enabled once per repository (Settings → Pages → Source: GitHub
+      # Actions): creating the site needs an account-level permission a workflow token does not
+      # carry, so `enablement: true` below is a best effort and the first push on a brand-new
+      # repository still fails here — that is how this was discovered, and why the README says
+      # so plainly. Once Pages is on, this step succeeds and every push deploys `dist/`.
+      # Pages serves static files only — the signaling server is a separate Node process,
+      # pointed at through VITE_SIGNALING_URL.
       - uses: actions/configure-pages@v5
         with:
           enablement: true

@@ -117,7 +117,12 @@ VITE_SIGNALING_URL=wss://signaling.example.com/ws npm run build
 ```
 
 `VITE_BASE_PATH=/your-repo/` handles project-site sub-paths. A ready-made Pages workflow
-lives in `.github/workflows/deploy-pages.yml`. The signaling image builds with
+lives in `.github/workflows/deploy-pages.yml` — with one manual step, once per repository:
+**Settings → Pages → Source: GitHub Actions**. The workflow asks the action to enable Pages by
+itself (`enablement: true`), but that call needs permissions a workflow's own token does not
+have on a repository where Pages has never been on (`Resource not accessible by integration`),
+so the first push is not enough on its own. Once Pages is on, every push to `main` deploys
+`dist/` to `https://<owner>.github.io/<repo>/`. The signaling image builds with
 `docker build -t lanshare-signaling ./`; every instruction in that Dockerfile is replayed by
 `npm run verify:docker` (run in CI on every push), so only the container layer itself is
 unverified here.
